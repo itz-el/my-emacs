@@ -1,0 +1,155 @@
+#+TITLE: My Emacs Config
+#+DESCRIPTION: This file is loaded from .init
+#+LANGUAGE: en
+#+PROPERTY: results silent
+#+PROPERTY: header-args :tangle yes
+* Package Settings
+** Framework
+  #+BEGIN_SRC emacs-lisp
+  #+END_SRC
+** Org
+   #+BEGIN_SRC emacs-lisp
+   ;;(require org-bullets)
+   (setq org-todo-keywords '((type "TODO" "ONGOING" "STARTED" "WAITING" "|" "DONE")))
+   #+END_SRC
+** Circe
+** exwm
+   *NOTE*: This is the exwm session of my config. Most
+   settings were taken from the [[https://github.com/ch11ng/exwm/wiki][github wiki page]] and
+   its [[https://github.com/ch11ng/exwm/wiki/Configuration-Example][example configuration]] here.
+   #+BEGIN_SRC emacs-lisp
+     ;; Load EXWM.
+     (require 'exwm)
+
+     ;; Set the initial number of workspaces (they can also be created later).
+     (setq exwm-workspace-number 4)
+
+     ;; All buffers created in EXWM mode are named "*EXWM*". You may want to
+     ;; change it in `exwm-update-class-hook' and `exwm-update-title-hook', which
+     ;; are run when a new X window class name or title is available.  Here's
+     ;; some advice on this topic:
+     ;; + Always use `exwm-workspace-rename-buffer` to avoid naming conflict.
+     ;; + For applications with multiple windows (e.g. GIMP), the class names of
+     ;    all windows are probably the same.  Using window titles for them makes
+     ;;   more sense.
+     ;; In the following example, we use class names for all windows except for
+     ;; Java applications and GIMP.
+     (add-hook 'exwm-update-class-hook
+	       (lambda ()
+		 (unless (or (string-prefix-p "sun-awt-X11-" exwm-instance-name)
+			     (string= "gimp" exwm-instance-name))
+		   (exwm-workspace-rename-buffer exwm-class-name))))
+     (add-hook 'exwm-update-title-hook
+	       (lambda ()
+
+		 (when (or (not exwm-instance-name)
+			   (string-prefix-p "sun-awt-X11-" exwm-instance-name)
+			   (string= "gimp" exwm-instance-name))
+		   (exwm-workspace-rename-buffer exwm-title))))
+
+     ;; Global keybindings can be defined with `exwm-input-global-keys'.
+     ;; Here are a few examples:
+     (setq exwm-input-global-keys
+	   `(
+             ;; Bind "s-m" to toggle mode line visibility 
+	     ([?\s-m] . exwm-layout-toggle-mode-line)
+	     ;; Bind "s-r" to exit char-mode and fullscreen mode.
+	     ([?\s-r] . exwm-reset)
+	     ;; Bind "s-w" to switch workspace interactively.
+	     ([?\s-w] . exwm-workspace-switch)
+	     ;; Bind "s-0" to "s-9" to switch to a workspace by its index.
+	     ,@(mapcar (lambda (i)
+			 `(,(kbd (format "s-%d" i)) .
+			   (lambda ()
+			     (interactive)
+			     (exwm-workspace-switch-create ,i))))
+		       (number-sequence 0 9))
+	     ;; Bind "s-&" to launch applications ('M-&' also works if the output
+	     ;; buffer does not bother you).
+	     ([?\s-&] . (lambda (command)
+			  (interactive (list (read-shell-command "$ ")))
+			  (start-process-shell-command command nil command)))
+	     ;; Bind "s-<f2>" to "slock", a simple X display locker.
+	     ([s-f2] . (lambda ()
+			 (interactive)
+			 (start-process "" nil "/usr/bin/slock")))))
+
+     ;; To add a key binding only available in line-mode, simply define it in
+     ;; `exwm-mode-map'.  The following example shortens 'C-c q' to 'C-q'.
+     (define-key exwm-mode-map [?\C-q] #'exwm-input-send-next-key)
+
+     ;; The following example demonstrates how to use simulation keys to mimic
+     ;; the behavior of Emacs.  The value of `exwm-input-simulation-keys` is a
+     ;; list of cons cells (SRC . DEST), where SRC is the key sequence you press
+     ;; and DEST is what EXWM actually sends to application.  Note that both SRC
+     ;; and DEST should be key sequences (vector or string).
+     (setq exwm-input-simulation-keys
+	   '(
+	     ;; movement
+	     ([?\C-b] . [left])
+	     ([?\M-b] . [C-left])
+	     ([?\C-f] . [right])
+	     ([?\M-f] . [C-right])
+	     ([?\C-p] . [up])
+	     ([?\C-n] . [down])
+	     ([?\C-a] . [home])
+	     ([?\C-e] . [end])
+	     ([?\M-v] . [prior])
+	     ([?\C-v] . [next])
+	     ([?\C-d] . [delete])
+	     ([?\C-k] . [S-end delete])
+	     ;; cut/paste.
+	     ([?\C-w] . [?\C-x])
+	     ([?\M-w] . [?\C-c])
+	     ([?\C-y] . [?\C-v])
+	     ;; search
+	     ([?\C-s] . [?\C-f])))
+
+     ;; You can hide the minibuffer and echo area when they're not used, by
+     ;; uncommenting the following line.
+     (setq exwm-workspace-minibuffer-position 'bottom)
+
+     ;;
+     (defcustom exwm-manage-finish-hook nil
+      "Normal hook run after a window is just managed, in the context of the
+      corresponding buffer."
+      :options '(exwm-layout-hide-mode-line)
+      :type 'hook)
+
+     ;; Do not forget to enable EXWM. It will start by itself when things are
+     ;; ready.  You can put it _anywhere_ in your configuration.
+     
+   #+END_SRC
+* Quality of Life
+  
+   #+BEGIN_SRC emacs-lisp
+     (setq org-roam-v2-ack t)
+     (menu-bar-mode -1)
+     (toggle-scroll-bar -1)
+     (tool-bar-mode -1)
+     (fringe-mode 1)
+     (setq frame-title-format
+	 '((:eval (if (buffer-file-name)
+	  (abbreviate-file-name (buffer-file-name))
+	   "%b"))))
+
+     (put 'downcase-region 'disabled nil)
+     (put 'upcase-regon 'disabled nil)
+     (put 'narrow-to-region 'disabled nil) 
+     (put 'dired-find-alternative-file 'disabled nil)
+
+     (defalias 'yes-or-no-p 'y-or-n-p)
+
+   #+END_SRC
+* Key Bindings
+** General
+   #+BEGIN_SRC emacs-lisp
+   (global-set-key (kbd "C-x k") 'kill-this-buffer)
+   (global-set-key (kbd "C-c a") 'org-agenda)
+   (global-set-key (kbd "C-c c") 'org-capture)
+   #+END_SRC
+** Org
+** exwm
+* Temp
+   
+
